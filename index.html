@@ -602,44 +602,6 @@ const DTWO = [[['3', '5'], [2, 2]], [['2', '3'], [2, 3]], [['2', '3'], [3, 2]], 
 const DTHREE = [[['3', '2', '5'], [1, 2, 2]], [['2', '5', '3'], [1, 2, 2]], [['5', '2', '3'], [1, 3, 2]], [['3', '5', '2'], [2, 3, 1]], [['2', '3', '7'], [1, 2, 2]], [['7', '2', '3'], [1, 2, 2]], [['2', '3', '5'], [2, 1, 3]]];
 const DBASE = [[2, 2, 3, 2, 3], [3, 2, 2, 3, 2], [2, 3, 3, 2, 3], [2, 2, 5, 2, 2], [5, 2, 2, 3, 2], [3, 2, 5, 2, 3], [2, 2, 3, 3, 2], [2, 3, 5, 2, 3]];   // まぼろし：log_{a^k}{b^m}・log_{b}{a^n}（底を a に そろえて おろす。例 log₄9・log₃8 ＝ 3）
 const DROOT = [[['3', '5'], ['1|2', 2]], [['2', '3'], ['1|2', 3]], [['5', '2'], ['1|3', 2]], [['2', '7'], ['1|2', 2]], [['3', '2'], ['1|3', 2]], [['2', '5'], ['1|2', 3]], [['3', '2'], ['1|2', 4]], [['2', '3'], ['1|3', 3]]];
-// ---------- 第5章 a、b で 表す（log₂3 ＝ a、log₂5 ＝ b、底を 2 に）----------
-const EDEN = [['8', '15'], ['4', '15'], ['16', '5'], ['8', '3'], ['32', '6'], ['8', '45'], ['4', '75'], ['32', '90'], ['8', '5'], ['4', '45'], ['16', '75'], ['8', '12'], ['32', '15'], ['4', '3']];
-const EVAR = [['3', '15'], ['5', '30'], ['3', '5'], ['5', '3'], ['5', '12'], ['3', '20'], ['5', '18'], ['3', '10'], ['5', '6'], ['9', '15'], ['25', '6'], ['3', '40'], ['5', '24']];
-const EMIX = [['6', '15'], ['10', '3'], ['15', '6'], ['6', '10'], ['12', '5'], ['10', '12'], ['6', '5'], ['10', '6'], ['15', '2']];
-const EASY5 = s => exps(s).every(x => qv(x) <= 1);   // ★0（1回め）は 真数の 指数が どれも 1 いか だけ（おろす 手が ない。11-16 先生「1週目は 手加減」）
-const EROOT = [['9', '2√5'], ['25', '2√3'], ['2√3', '5'], ['2√5', '6'], ['9', '3√5'], ['2√5', '3'], ['27', '2√5'], ['2√3', '10']];
-const PR = [2, 3, 5];
-const AV = Math.log2(3), BV = Math.log2(5);
-function exps(s) {   // 2・3・5 の 指数（累乗根は 分数）
-  s = String(s); let k = 1;
-  if (s.includes('√')) { const [n, x] = s.split('√'); k = +n; s = x; }
-  let n = +s; const e = PR.map(p => { let c = 0; while (n % p === 0) { n /= p; c++; } return Q(c, k); });
-  if (n !== 1) throw new Error('2・3・5 で 分けられない ' + s);
-  return e;
-}
-const abV = c => qv(c[0]) + qv(c[1]) * AV + qv(c[2]) * BV;   // [定数, a, b]
-function abText(c) {   // 整数の 係数 → 2a ＋ b − 1 など
-  const parts = [];
-  const add = (k, s) => { if (!k) return; const m = Math.abs(k) === 1 && s ? '' : String(Math.abs(k)); parts.push([k < 0 ? '−' : '＋', m + s]); };
-  add(c[1], 'a'); add(c[2], 'b'); add(c[0], '');
-  return parts.map(([sg, t], i) => (i === 0 ? (sg === '−' ? '−' : '') : ' ' + sg + ' ') + t).join('') || '0';
-}
-function abFrac(cn, cd) {   // 分子 cn・分母 cd（[定数, a, b] の 分数）→ 整数に そろえて 約分した 文字
-  const L = [...cn, ...cd].reduce((l, q) => l * q[1] / gcd(l, q[1]), 1);
-  let n = cn.map(q => q[0] * L / q[1]), d = cd.map(q => q[0] * L / q[1]);
-  const g = [...n, ...d].reduce((x, y) => gcd(x, y), 0) || 1;
-  n = n.map(x => x / g); d = d.map(x => x / g);
-  const dConst = !d[1] && !d[2];
-  if (dConst && d[0] < 0) { n = n.map(x => -x); d = d.map(x => -x); }
-  if (dConst && d[0] === 1) return abText(n);
-  return fr(abText(n), abText(d));
-}
-const abQ = e => [e[0], e[1], e[2]];
-function factT(s) {   // 真数を 2・3・5 の 累乗の かけざんで（② で 見せる。11-16 先生「3段階 とんでる」）
-  const e = exps(s), parts = PR.map((p, i) => [p, e[i]]).filter(x => x[1][0]).map(([p, k]) => (qv(k) === 1 ? String(p) : pw(p, qs(k))));
-  return parts.length > 1 ? '(' + parts.join(' × ') + ')' : parts[0];
-}   // 2・3・5 の 指数 → [定数, a, b]（log₂2 ＝ 1、log₂3 ＝ a、log₂5 ＝ b）
-
 // ---------- 選択肢 ----------
 function makeOptions(q, rng) {
   const c = [];
@@ -716,22 +678,6 @@ function makeOptions(q, rng) {
     add(ct(c1) + L1 + DOT + L2, qv(c1) * v * w, ['half']);
   }
   if (m === 'dBase' && two) { const P = Q(q.m * q.n, q.k); addQ(P, []); addQ(Q(q.m * q.n), ['baseDiv']); addQ(Q(1), ['nocoef']); addQ(Q(q.m * q.k * q.n), ['baseMul']); }
-  if (CH5.includes(m) && !two) {
-    const Nn = NUM(q.N), D = NUM(q.D), two_ = NUM('2'), top = LG(two_, Nn), bot = LG(two_, D);
-    add(fr(top.t, bot.t), top.v / bot.v, []);
-    add(fr(bot.t, top.t), bot.v / top.v, ['updown']);
-    add(top.t + ' − ' + bot.t, top.v - bot.v, ['subLog']);
-    if (m === 'eDen') add(fr(top.t, D.t), top.v / D.v, ['tnDen']);
-  }
-  if (CH5.includes(m) && two) {
-    const cn = abQ(exps(q.N)), cd = abQ(exps(q.D)), v = abV(cn) / abV(cd);
-    add(abFrac(cn, cd), v, []);
-    add(abFrac(cd, cn), 1 / v, ['updown']);
-    const diff = cn.map((x, i) => qsub(x, cd[i]));
-    add(abFrac(diff, [Q(1), Q(0), Q(0)]), abV(diff), ['subAB']);
-    if (cn.some(x => Math.abs(qv(x)) > 1)) { const sg = cn.map(x => Q(Math.sign(x[0]))); add(abFrac(sg, cd), abV(sg) / abV(cd), ['nocoef']); }
-    if (qv(cn[1]) !== qv(cn[2]) || qv(cd[1]) !== qv(cd[2])) { const sw = x => [x[0], x[2], x[1]]; add(abFrac(sw(cn), sw(cd)), abV(sw(cn)) / abV(sw(cd)), ['swapAB']); }
-  }
   const seen = new Set(), out = [];
   for (const x of c) { if (seen.has(x.key) || out.some(o => o.text === x.text)) continue; seen.add(x.key); out.push(x); if (out.length === 4) break; }
   const opts = out.map(x => ({ text: x.text, key: x.key, types: x.types, correct: !x.types.length }));
@@ -747,12 +693,10 @@ function logsOf(q) {   // 第3章：書く 順の log
 const CH2 = ['vInt', 'vFrac', 'vRoot', 'vSqB'];
 const CH3 = ['cChain', 'cSwap', 'cThree'];
 const CH4 = ['dTwo', 'dThree', 'dRoot'];
-const CH5 = ['eDen', 'eVar', 'eMix', 'eRoot'];
-const STEPS = CH2.concat(CH3, CH4, ['dBase'], CH5);   // ワケテン（361(3) の 形）は 外した（判断を こえる・前半だけを 聞くのは わからない。11-16 先生）
+const STEPS = CH2.concat(CH3, CH4, ['dBase']);   // 第5章（a、b で 表す）は 外した（11-16 先生）   // ワケテン（361(3) の 形）は 外した（判断を こえる・前半だけを 聞くのは わからない。11-16 先生）
 const RULE_HEN = '底の 変換公式：' + lg('a', 'b') + ' ＝ ' + fr(lg('c', 'b'), lg('c', 'a')) + '（元の 真数は 分子、元の 底は 分母）';
 const RULE_TSUNAGU = 'となりの 真数と 底が 同じなら、つないで 1つの log に する：' + lg('a', 'b') + DOT + lg('b', 'c') + ' ＝ ' + lg('a', 'c');
 const RULE_OROSU = '真数の 指数は log の 前に おろす：' + lg('a', 'M^{p}') + ' ＝ ' + pk('p') + lg('a', 'M');
-const HEAD5 = lg(2, 3) + ' ＝ a、' + lg(2, 5) + ' ＝ b';
 const dExpr = q => { const xs = q.xs.map(NUM), ps = q.ps.map(R), n = xs.length; return xs.map((x, i) => { const y = xs[(i + 1) % n], p = ps[i]; return lg(x.t, isInt(p) ? (qv(p) === 1 ? y.t : String(Math.round(Math.pow(y.v, qv(p))))) : rt(p[1], p[0] === 1 ? y.t : String(Math.pow(y.v, p[0])))); }).join(DOT); };
 const dMid = q => { const xs = q.xs.map(NUM), ps = q.ps.map(R), n = xs.length; return xs.map((x, i) => ct(ps[i]) + lg(x.t, xs[(i + 1) % n].t)).join(DOT); };
 const bExpr = q => lg(Math.pow(q.a, q.k), Math.pow(q.b, q.m)) + DOT + lg(q.b, Math.pow(q.a, q.n));
@@ -784,11 +728,6 @@ function texts(q) {
     const e = bExpr(q), mid = bMid(q);
     if (!two) return [['▼ ① 底を ' + q.a + ' に そろえて おろすと？', e], ['次の 式を 計算せよ。まず 底を ' + q.a + ' に そろえて、指数を log の 前に おろせ。　' + e], e];
     return [['▼ ② 値は？', e + '\n＝ ' + mid + ' ＝ □'], ['底を そろえて おろすと\n　' + e + '\n　＝ ' + mid + '\nこの 値を 求めよ。'], mid];
-  }
-  if (CH5.includes(m)) {
-    const Nn = NUM(q.N), D = NUM(q.D), e = lg(D.t, Nn.t), mid = two ? fr(lg(2, factT(q.N)), lg(2, factT(q.D))) : fr(lg(2, Nn.t), lg(2, D.t));
-    if (!two) return [['▼ ① 底を 2 に そろえると？', HEAD5 + '\n' + e + ' を 底 2 で 表すと？'], [HEAD5 + ' と する。' + e + ' を a、b で 表せ。まず 底を 2 に そろえよ。'], e];
-    return [['▼ ② a、b で 表すと？', HEAD5 + '\n' + e + '\n＝ ' + mid], [HEAD5 + ' と する。\n底を 2 に そろえて 真数を 分けると\n　' + e + ' ＝ ' + mid + '\nを a、b で 表せ。'], mid];   // ② は 真数を 分けた 形で 見せる（指数を おろして a、b に するだけ）
   }
   return [['', ''], [''], ''];
 }
@@ -831,15 +770,6 @@ function reasonLines(q) {
     if (!two) { add(RULE_HEN); add(lg(A, B) + ' ＝ ' + fr(lg(q.a, pw(q.b, q.m)), lg(q.a, pw(q.a, q.k))) + ' ＝ ' + fr(q.m + lg(q.a, q.b), q.k) + '（底の 指数は 分母に おりる）'); add(lg(q.b, Math.pow(q.a, q.n)) + ' ＝ ' + pk(q.n) + lg(q.b, q.a)); }
     else { add('係数を 前に 集めて、残りの log を つなぐ（' + lg(q.a, q.b) + DOT + lg(q.b, q.a) + ' ＝ 1）'); add(qs(Q(q.m, q.k)) + ' × ' + q.n + ' ＝ ' + qs(Q(q.m * q.n, q.k))); }
   }
-  if (CH5.includes(m)) {
-    const Nn = NUM(q.N), D = NUM(q.D);
-    if (!two) { add('a、b は 底が 2 の log なので、底を 2 に そろえる'); add(RULE_HEN); add(lg(D.t, Nn.t) + ' ＝ ' + fr(lg(2, Nn.t), lg(2, D.t))); }
-    else {
-      const sp = s => { const e = exps(s); return lg(2, factT(s)) + ' ＝ ' + abFrac(abQ(e), [Q(1), Q(0), Q(0)]); };
-      add('指数は log の 前に おろして、' + lg(2, 3) + ' ＝ a、' + lg(2, 5) + ' ＝ b、' + lg(2, 2) + ' ＝ 1');
-      add(sp(q.N) + '、' + sp(q.D));
-    }
-  }
   return L;
 }
 
@@ -861,8 +791,6 @@ function hintLines(p) {
   if (CH4.includes(m)) return ['係数を 前に 集めて かけざんに する', '（のこりの log は つないで 1つに）'];
   if (m === 'dBase' && !two) return ['底と 真数を ' + p.prm.a + ' と ' + p.prm.b + ' の 累乗で 書く', '底を ' + p.prm.a + ' に そろえると、底の 指数は 分母に おりる'];
   if (m === 'dBase') return ['係数を 前に 集めて かけざんに する', '（のこりの log は つないで 1つに）'];
-  if (CH5.includes(m) && !two) return ['底を 2 に 変換する', '（a、b は 底が 2 の log）'];
-  if (CH5.includes(m)) return ['真数の 指数を log の 前に おろす', 'それから ' + lg(2, 3) + ' を a、' + lg(2, 5) + ' を b、' + lg(2, 2) + ' を 1 に する'];
   return [];
 }
 
@@ -877,8 +805,6 @@ const CH_ALL = [
     mab: { form: 'cInv', name: 'カケテイチ', sprite: '☯️', tip: lg(3, 5) + DOT + lg(5, 3) + ' ＝ ' + lg(3, 3) + ' ＝ 1' }, boss: { name: 'ツナギオウ', sprite: '⛓️' } },
   { key: 'chii', title: '真数を 小さく', forms: ['dTwo', 'dThree', 'dRoot'], plays: [['dTwo', 'dThree'], ['dRoot', 'dTwo'], ['dThree', 'MAB']],
     mab: { form: 'dBase', name: 'ソロエオロシ', sprite: '🪝', tip: lg(4, 9) + DOT + lg(3, 8) + ' ＝ ' + pk('{2|2}') + lg(2, 3) + DOT + pk(3) + lg(3, 2) + ' ＝ 3：底を そろえると 底の 指数は 分母に' }, boss: { name: 'チイサクオウ', sprite: '🐜' } },
-  { key: 'ab', title: 'a、b で 表す', forms: ['eDen', 'eVar', 'eMix'], plays: [['eDen', 'eVar'], ['eMix', 'eDen'], ['eVar', 'MAB']],
-    mab: { form: 'eRoot', name: 'ルートエービ', sprite: '🌵', tip: lg(9, '√{5}') + ' ＝ ' + fr(lg(2, '√{5}'), lg(2, 9)) + ' ＝ ' + fr('b', '4a') }, boss: { name: 'エービーオウ', sprite: '🔤' } },
 ];
 const CHAPTERS = CH_ALL.map((c, i) => Object.assign({}, c, { ch: i + 1, lv: i + 1, title: '第' + (i + 1) + '章 ' + c.title }))
   .concat([{ ch: CH_ALL.length + 1, final: true, title: 'さいごの 章', boss: { name: 'テイノカミ', sprite: '🌌' } }]);
@@ -902,9 +828,6 @@ const MONSTERS = [
   ['dTwo', 'オロシカケ', '🪜', lg(3, 25) + DOT + lg(5, 9) + ' ＝ ' + pk(2) + lg(3, 5) + DOT + pk(2) + lg(5, 3) + ' ＝ 4'],
   ['dThree', 'ミツオロシ', '🎋', lg(3, 2) + DOT + lg(2, 25) + DOT + lg(5, 9) + ' ＝ 2 × 2 × ' + lg(3, 3) + ' ＝ 4'],
   ['dRoot', 'ネッコオロシ', '🥕', lg(3, '√{5}') + DOT + lg(5, 9) + ' ＝ ' + pk('{1|2}') + lg(3, 5) + DOT + pk(2) + lg(5, 3) + ' ＝ 1：累乗根も 指数に して おろす'],
-  ['eDen', 'ニノベキ', '🔋', lg(32, 15) + ' ＝ ' + fr(lg(2, 15), lg(2, 32)) + ' ＝ ' + fr('a ＋ b', 5)],
-  ['eVar', 'エービー', '🅰️', lg(5, 12) + ' ＝ ' + fr(lg(2, 12), lg(2, 5)) + ' ＝ ' + fr('a ＋ 2', 'b')],
-  ['eMix', 'マジエービ', '🎨', lg(6, 15) + ' ＝ ' + fr(lg(2, 15), lg(2, 6)) + ' ＝ ' + fr('a ＋ b', 'a ＋ 1')],
 ].map(([id, name, sprite, tip]) => ({ id, ch: FORM_LV[id], name, sprite, tip }))
   .concat(NORM_CH.filter(c => c.mab).map(c => ({ id: c.mab.form, ch: c.ch, name: c.mab.name, sprite: c.mab.sprite, tip: c.mab.tip, mab: true })))
   .concat(NORM_CH.map(c => ({ id: 'boss' + c.ch, ch: c.ch, name: c.boss.name, sprite: c.boss.sprite, tip: '中ボス：' + c.title.replace(/^第\d章 /, '') + 'を 問題集の ことばで', boss: true })))
@@ -938,9 +861,6 @@ const GEN = {
   dThree: rng => { const [xs, ps] = pick(rng, DTHREE); return { xs, ps: ps.map(String) }; },
   dRoot: rng => { const [xs, ps] = pick(rng, DROOT); return { xs, ps: ps.map(String) }; },
   dBase: rng => { const [a, k, b, m, n] = pick(rng, DBASE); return { a, k, b, m, n }; },
-  eDen: (rng, o = {}) => { const [D, N] = pick(rng, o.first ? EDEN.filter(x => EASY5(x[1])) : EDEN); return { D, N }; },
-  eVar: (rng, o = {}) => { const [D, N] = pick(rng, o.first ? EVAR.filter(x => EASY5(x[0]) && EASY5(x[1])) : EVAR); return { D, N }; },
-  eMix: (rng, o = {}) => { const [D, N] = pick(rng, o.first ? EMIX.filter(x => EASY5(x[0]) && EASY5(x[1])) : EMIX); return { D, N }; }, eRoot: rng => { const [D, N] = pick(rng, EROOT); return { D, N }; },
 };
 function genPrm(form, rng, opt = {}) { const r = GEN[form](rng, opt); return Object.assign({ mode: form }, r, { f: form, mode: r.mode || form }); }
 const visLen = s => s.split('\n').reduce((m, x) => Math.max(m, x.replace(/log_\{([^{}]*)\}/g, 'l$1').replace(/[_^{}|‹›]|\[\d+\]/g, '').length), 0);
@@ -981,13 +901,11 @@ const TYPE_TEXT = {
   sumLog: 'かけざんを たしざんに した', tn: '真数を 答えた（値は 何乗か）', zeroI: '入れかえた log どうしの かけざんは 1（0 では ない）',
   half: '指数を おろし わすれた 方が ある', mulc: '指数は 真数に かけない（log の 前に おろす）', addE: 'おろした 指数は かけざん（たさない）',
   nocoef: '係数（おろした 指数）を わすれた', addc: '係数どうしは かけざん（たさない）', baseDiv: '底の 指数も おろす（底の 指数は 分母に おりる）', baseMul: '底の 指数は 分母に おりる（かけない）',
-  tnDen: '分母も log に する（真数の ままに しない）', subAB: 'log の わりざんを ひきざんに した', swapAB: 'a と b が 入れかわった',
   scatter: 'えらびかたが ばらばら',
 };
 const MASTER_TEXT = { updown: '分子と 分母', subLog: '分数の まま', mulLog: '分数に する', cancelLog: 'log は 約分 しない', keepBase: '新しい 底', tnBase: '新しい 底', noPow: '新しい 底',
   keep: '逆数', neg: 'プラスと マイナス', flip: '分子と 分母', subE: '指数の 分数', rev: 'つなぐ 向き', mulT: 'つなぐ', sumLog: 'かけざんの まま', tn: '何乗か', zeroI: 'かけると 1',
-  half: '指数を おろす', mulc: '指数を おろす', addE: 'おろして かける', nocoef: '係数', addc: '係数を かける', baseDiv: '底の 指数', baseMul: '底の 指数',
-  tnDen: '分母も log', subAB: 'わりざんの まま', swapAB: 'a と b' };
+  half: '指数を おろす', mulc: '指数を おろす', addE: 'おろして かける', nocoef: '係数', addc: '係数を かける', baseDiv: '底の 指数', baseMul: '底の 指数' };
 function describe(p, cls) { return cls.types.map(t => TYPE_TEXT[t]).join('、'); }
 function masterText(t) { return MASTER_TEXT[t]; }
 function likeOK(q, w, types) {   // 同じ 形で、同じ まちがいの 選択肢が 出る 問題
