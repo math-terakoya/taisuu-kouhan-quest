@@ -703,9 +703,12 @@ function makeOptions(q, rng) {
     const j = ps.findIndex(p => qv(p) !== 1);
     addQ(P, []); addQ(Q(1), ['nocoef']); addQ(S, ['addc']); addQ(qdiv(P, ps[j]), ['half']);
   }
-  if (m === 'dTen' && !two) {
-    const p = q.p, r = q.r, L = lg(p, r), v = LNv(p, r);
-    add('1 ＋ ' + L, 1 + v, []); add(L, v, ['drop1']); add(p + ' ＋ ' + L, p + v, ['pval']);
+  if (m === 'dTen' && !two) {   // ① 式の かけざんの 部分 log_p(pr)・log_r(pr) の 真数を 分けた 形（11-16 先生「計算したい式と 関係ない」→ 式の 中の かけざん 全体を 聞く）
+    const p = q.p, r = q.r, L1 = lg(p, r), L2 = lg(r, p), v1 = LNv(p, r), v2 = LNv(r, p);
+    add('(1 ＋ ' + L1 + ')(1 ＋ ' + L2 + ')', (1 + v1) * (1 + v2), []);
+    add(L1 + DOT + L2, v1 * v2, ['drop1']);
+    add('(' + p + ' ＋ ' + L1 + ')(' + r + ' ＋ ' + L2 + ')', (p + v1) * (r + v2), ['pval']);
+    add('(1 ＋ ' + L1 + ') ＋ (1 ＋ ' + L2 + ')', 2 + v1 + v2, ['sumLog']);
   }
   if (m === 'dTen' && two) { addQ(Q(2), []); addQ(Q(1), ['invOne']); addQ(Q(0), ['allGone']); }
   if (CH5.includes(m) && !two) {
@@ -760,23 +763,23 @@ function texts(q) {
     const A = NUM(q.a), B = NUM(q.b), Cc = NUM(q.c), e = lg(A.t, B.t);
     if (!two) return [['▼ ① 底を ' + q.c + ' に そろえると？', e], ['底の 変換公式を 用いて、次の 値を 求めよ。まず 底を ' + q.c + ' に そろえよ。　' + e], e];
     const mid = fr(lg(q.c, powT(Cc, ex(Cc, B))), lg(q.c, powT(Cc, ex(Cc, A))));
-    return [['▼ ② 値は？', e + '\n＝ ' + mid + ' ＝ □'], ['底を ' + q.c + ' に そろえると\n　' + e + ' ＝ ' + mid + '。\nこの 値を 求めよ。'], mid];
+    return [['▼ ② 値は？', e + '\n＝ ' + mid + ' ＝ □'], ['底を ' + q.c + ' に そろえると\n　' + e + ' ＝ ' + mid + '\nこの 値を 求めよ。'], mid];
   }
   if (CH3.includes(m)) {
     const xs = q.xs.map(NUM), e = logsOf(q).map(l => l.t).join(DOT), one = lg(xs[0].t, xs[xs.length - 1].t);
     if (!two) return [['▼ ① 1つの log に すると？', e], ['次の 式を 計算せよ。まず 1つの 対数で 表せ。　' + e], e];
-    return [['▼ ② 値は？', e + '\n＝ ' + one + ' ＝ □'], ['1つの 対数で 表すと\n　' + e + ' ＝ ' + one + '。\nこの 値を 求めよ。'], one];
+    return [['▼ ② 値は？', e + '\n＝ ' + one + ' ＝ □'], ['1つの 対数で 表すと\n　' + e + ' ＝ ' + one + '\nこの 値を 求めよ。'], one];
   }
   if (m === 'cInv') { const e = lg(q.a, q.b) + DOT + lg(q.b, q.a); return [['▼ 値は？', e + ' ＝ □'], ['次の 値を 求めよ。　' + e], e]; }
   if (CH4.includes(m)) {
     const e = dExpr(q), mid = dMid(q);
     if (!two) return [['▼ ① 指数を log の 前に おろすと？', e], ['次の 式を 計算せよ。まず 真数の 指数を log の 前に おろせ。　' + e], e];
-    return [['▼ ② 値は？', e + '\n＝ ' + mid + ' ＝ □'], ['指数を おろすと\n　' + e + '\n　＝ ' + mid + '。\nこの 値を 求めよ。'], mid];
+    return [['▼ ② 値は？', e + '\n＝ ' + mid + ' ＝ □'], ['指数を おろすと\n　' + e + '\n　＝ ' + mid + '\nこの 値を 求めよ。'], mid];
   }
   if (m === 'dTen') {
-    const e = tenExpr(q), first = lg(q.p, q.p * q.r);
-    if (!two) return [['▼ ① 1つめの log の 真数を 分けると？', e + '\n' + first + ' ＝ ？'], ['次の 式を 計算せよ。まず ' + first + ' を ' + lg(q.p, q.r) + ' を 使って 表せ。　' + e], first];
-    return [['▼ ② 値は？', tenMid2(q) + ' ＝ □'], ['真数を 分けると\n　' + tenMid(q) + '。\nこの 値を 求めよ。'], tenMid(q)];
+    const e = tenExpr(q), first = lg(q.p, q.p * q.r) + DOT + lg(q.r, q.p * q.r);
+    if (!two) return [['▼ ① かけざんの 真数を 分けると？', e], ['次の 式を 計算せよ。まず ' + first + ' の 真数を 分けて 表せ。　' + e], first];
+    return [['▼ ② 値は？', tenMid2(q) + ' ＝ □'], ['真数を 分けると\n　' + tenMid(q) + '\nこの 値を 求めよ。'], tenMid(q)];
   }
   if (CH5.includes(m)) {
     const Nn = NUM(q.N), D = NUM(q.D), e = lg(D.t, Nn.t), mid = fr(lg(2, Nn.t), lg(2, D.t));
@@ -820,7 +823,7 @@ function reasonLines(q) {
     else { const ps = q.ps.map(R), P = ps.reduce((s, p) => qmul(s, p), Q(1)); add('係数を 前に 集めて、残りの log を つなぐ'); add(dMid(q) + ' ＝ ' + ps.map(qs).join(' × ') + ' × ' + lg(q.xs[0], q.xs[0]) + ' ＝ ' + qs(P)); }
   }
   if (m === 'dTen') {
-    if (!two) { add('真数を かけざんに 分けて、log の たしざんに する：' + lg(q.p, q.p * q.r) + ' ＝ ' + lg(q.p, q.p) + ' ＋ ' + lg(q.p, q.r)); add(lg(q.p, q.p) + ' ＝ 1 なので 1 ＋ ' + lg(q.p, q.r)); }
+    if (!two) { add('真数を かけざんに 分けて、log の たしざんに する：' + lg(q.p, q.p * q.r) + ' ＝ ' + lg(q.p, q.p) + ' ＋ ' + lg(q.p, q.r) + ' ＝ 1 ＋ ' + lg(q.p, q.r)); add('もう 1つも 同じ：' + lg(q.r, q.p * q.r) + ' ＝ 1 ＋ ' + lg(q.r, q.p)); add('かけざんは かっこの まま：(1 ＋ ' + lg(q.p, q.r) + ')(1 ＋ ' + lg(q.r, q.p) + ')'); }
     else { add('展開すると 1 ＋ ' + lg(q.p, q.r) + ' ＋ ' + lg(q.r, q.p) + ' ＋ ' + lg(q.p, q.r) + DOT + lg(q.r, q.p)); add(lg(q.p, q.r) + DOT + lg(q.r, q.p) + ' ＝ 1、たした 2つは ひく 方と 消える → 1 ＋ 1 ＝ 2'); }
   }
   if (CH5.includes(m)) {
@@ -865,7 +868,7 @@ const CH_ALL = [
     mab: { form: 'hInv', name: 'ギャクスウ', sprite: '🪞', tip: lg(3, 5) + ' ＝ ' + fr('1', lg(5, 3)) + '：底と 真数を 入れかえると 逆数' }, boss: { name: 'ヘンカンオウ', sprite: '🏛️' } },
   { key: 'atai', title: '底を そろえて 値', forms: ['vInt', 'vFrac', 'vRoot'], plays: [['vInt', 'vFrac'], ['vRoot', 'vInt'], ['vFrac', 'MAB']],
     mab: { form: 'vSqB', name: 'ネッコテイ', sprite: '🌳', tip: lg('√{2}', 8) + ' ＝ ' + fr(lg(2, '2^{3}'), lg(2, '2^{{1|2}}')) + ' ＝ 6：底が 累乗根でも 同じ' }, boss: { name: 'ソロエオウ', sprite: '🗻' } },
-  { key: 'kake', title: '対数の かけざん', forms: ['cChain', 'cSwap', 'cThree'], plays: [['cChain', 'cSwap'], ['cThree', 'cChain'], ['cSwap', 'MAB']],
+  { key: 'kake', title: '対数の かけざん', forms: ['cChain', 'cSwap', 'cThree'], plays: [['cChain', 'cThree'], ['cSwap', 'cChain'], ['cSwap', 'MAB']], noFirst: ['cSwap'],   // 順番を 入れかえる 問題は ★0 の 回（中ボスも）に 出さない（11-16 先生）
     mab: { form: 'cInv', name: 'カケテイチ', sprite: '☯️', tip: lg(3, 5) + DOT + lg(5, 3) + ' ＝ ' + lg(3, 3) + ' ＝ 1' }, boss: { name: 'ツナギオウ', sprite: '⛓️' } },
   { key: 'chii', title: '真数を 小さく', forms: ['dTwo', 'dThree', 'dTen'], plays: [['dTwo', 'dThree'], ['dTen', 'dTwo'], ['dThree', 'MAB']],
     mab: { form: 'dRoot', name: 'ネッコオロシ', sprite: '🥕', tip: lg(3, '√{5}') + DOT + lg(5, 9) + ' ＝ ' + pk('{1|2}') + lg(3, 5) + DOT + pk(2) + lg(5, 3) + ' ＝ 1' }, boss: { name: 'チイサクオウ', sprite: '🐜' } },
@@ -893,7 +896,7 @@ const MONSTERS = [
   ['cThree', 'ミツツナギ', '🧵', lg(2, 3) + DOT + lg(3, 5) + DOT + lg(5, 8) + ' ＝ ' + lg(2, 8) + '：3つでも つなぐ'],
   ['dTwo', 'オロシカケ', '🪜', lg(3, 25) + DOT + lg(5, 9) + ' ＝ ' + pk(2) + lg(3, 5) + DOT + pk(2) + lg(5, 3) + ' ＝ 4'],
   ['dThree', 'ミツオロシ', '🎋', lg(3, 2) + DOT + lg(2, 25) + DOT + lg(5, 9) + ' ＝ 2 × 2 × ' + lg(3, 3) + ' ＝ 4'],
-  ['dTen', 'ワケテン', '🔟', lg(2, 6) + ' ＝ 1 ＋ ' + lg(2, 3) + '：真数を かけざんに 分ける'],
+  ['dTen', 'ワケテン', '🔟', lg(2, 6) + DOT + lg(3, 6) + ' ＝ (1 ＋ ' + lg(2, 3) + ')(1 ＋ ' + lg(3, 2) + ')：真数を 分ける'],
   ['eDen', 'ニノベキ', '🔋', lg(32, 15) + ' ＝ ' + fr(lg(2, 15), lg(2, 32)) + ' ＝ ' + fr('a ＋ b', 5)],
   ['eVar', 'エービー', '🅰️', lg(5, 12) + ' ＝ ' + fr(lg(2, 12), lg(2, 5)) + ' ＝ ' + fr('a ＋ 2', 'b')],
   ['eMix', 'マジエービ', '🎨', lg(6, 15) + ' ＝ ' + fr(lg(2, 15), lg(2, 6)) + ' ＝ ' + fr('a ＋ b', 'a ＋ 1')],
@@ -1012,7 +1015,8 @@ function makeSlots(ch, rng, opt = {}) {
 function newContext() { return { recent: [], weak: {}, log: [] }; }
 function makeProblem(slot, ctx, rng) {
   const w = ctx.weak[slot.lv];
-  const forms = slot.form ? [slot.form] : CHAPTERS[slot.lv - 1].forms;
+  const nf = slot.play === 0 && CHAPTERS[slot.lv - 1].noFirst || [];
+  const forms = slot.form ? [slot.form] : CHAPTERS[slot.lv - 1].forms.filter(f => !nf.includes(f));
   const fresh = prm => !ctx.recent.includes(JSON.stringify(prm));
   const gen = () => genPrm(pick(rng, forms), rng, { first: slot.play === 0 });
   let prm = null, target = false;
