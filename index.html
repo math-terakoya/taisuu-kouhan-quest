@@ -197,6 +197,7 @@ min-height: 44px; touch-action: manipulation;
 .lg { white-space: nowrap; }
 .lg sub.lb { font-size: 0.72em; vertical-align: -0.42em; line-height: 0; margin: 0 1px 0 1px; color: #6fb2ff; }
 .lg sub.lb .fr { font-size: 1.15em; }
+.fr > .nu:has(.lg) { padding-bottom: 0.34em; }   /* 分子の log の 小さい 底が 分数の 線に くいこまない ように（11-16 先生） */
 .fr > .de:has(.lg) { padding-bottom: 0.34em; }   /* 分母の log の 小さい 底が 欄から はみ出して 式が 小さく ならない ように（後半：log どうしの 分数。11-16） */
 .lg .tn { color: #ffad5c; }
 .key.opt .lg .tn > .fr { font-size: 0.9em; }
