@@ -703,14 +703,13 @@ function makeOptions(q, rng) {
     const j = ps.findIndex(p => qv(p) !== 1);
     addQ(P, []); addQ(Q(1), ['nocoef']); addQ(S, ['addc']); addQ(qdiv(P, ps[j]), ['half']);
   }
-  if (m === 'dTen' && !two) {   // ① 式の かけざんの 部分 log_p(pr)・log_r(pr) の 真数を 分けた 形（11-16 先生「計算したい式と 関係ない」→ 式の 中の かけざん 全体を 聞く）
+  if (m === 'dTen') {   // 式の かけざんの 部分 log_p(pr)・log_r(pr) の 真数を 分けた 形（11-16 先生「計算したい式と 関係ない」→ 式の 中の かけざん 全体を 聞く）
     const p = q.p, r = q.r, L1 = lg(p, r), L2 = lg(r, p), v1 = LNv(p, r), v2 = LNv(r, p);
     add('(1 ＋ ' + L1 + ')(1 ＋ ' + L2 + ')', (1 + v1) * (1 + v2), []);
     add(L1 + DOT + L2, v1 * v2, ['drop1']);
     add('(' + p + ' ＋ ' + L1 + ')(' + r + ' ＋ ' + L2 + ')', (p + v1) * (r + v2), ['pval']);
     add('(1 ＋ ' + L1 + ') ＋ (1 ＋ ' + L2 + ')', 2 + v1 + v2, ['sumLog']);
   }
-  if (m === 'dTen' && two) { addQ(Q(2), []); addQ(Q(1), ['invOne']); addQ(Q(0), ['allGone']); }
   if (CH5.includes(m) && !two) {
     const Nn = NUM(q.N), D = NUM(q.D), two_ = NUM('2'), top = LG(two_, Nn), bot = LG(two_, D);
     add(fr(top.t, bot.t), top.v / bot.v, []);
@@ -743,7 +742,7 @@ const CH2 = ['vInt', 'vFrac', 'vRoot', 'vSqB'];
 const CH3 = ['cChain', 'cSwap', 'cThree'];
 const CH4 = ['dTwo', 'dThree', 'dRoot'];
 const CH5 = ['eDen', 'eVar', 'eMix', 'eRoot'];
-const STEPS = CH2.concat(CH3, CH4, ['dTen'], CH5);
+const STEPS = CH2.concat(CH3, CH4, CH5);   // ワケテン（dTen）は ① だけ（値を 求めるのは 判断を こえる。11-16 先生）
 const RULE_HEN = '底の 変換公式：' + lg('a', 'b') + ' ＝ ' + fr(lg('c', 'b'), lg('c', 'a')) + '（元の 真数は 分子、元の 底は 分母）';
 const RULE_TSUNAGU = 'となりの 真数と 底が 同じなら、つないで 1つの log に する：' + lg('a', 'b') + DOT + lg('b', 'c') + ' ＝ ' + lg('a', 'c');
 const RULE_OROSU = '真数の 指数は log の 前に おろす：' + lg('a', 'M^{p}') + ' ＝ ' + pk('p') + lg('a', 'M');
@@ -752,7 +751,6 @@ const dExpr = q => { const xs = q.xs.map(NUM), ps = q.ps.map(R), n = xs.length; 
 const dMid = q => { const xs = q.xs.map(NUM), ps = q.ps.map(R), n = xs.length; return xs.map((x, i) => ct(ps[i]) + lg(x.t, xs[(i + 1) % n].t)).join(DOT); };
 const tenExpr = q => { const N = q.p * q.r; return lg(q.p, N) + DOT + lg(q.r, N) + ' − (' + lg(q.p, q.r) + ' ＋ ' + lg(q.r, q.p) + ')'; };
 const tenMid = q => '(1 ＋ ' + lg(q.p, q.r) + ')(1 ＋ ' + lg(q.r, q.p) + ') − (' + lg(q.p, q.r) + ' ＋ ' + lg(q.r, q.p) + ')';
-const tenMid2 = q => tenMid(q).replace(') − (', ')\n− (');   // ② は 展開した 式だけを 2行で（もとの 式も 並べると 4行に 折れる。11-16）
 function texts(q) {
   const m = q.mode, two = q.st === 2;
   if (m === 'hForm') { const e = lg(NUM(q.a).t, NUM(q.b).t); return [['▼ 底が ' + q.c + ' の log で 表すと？', e], ['底の 変換公式を 用いて、' + e + ' を 底が ' + q.c + ' の 対数で 表せ。'], e]; }
@@ -778,8 +776,7 @@ function texts(q) {
   }
   if (m === 'dTen') {
     const e = tenExpr(q), first = lg(q.p, q.p * q.r) + DOT + lg(q.r, q.p * q.r);
-    if (!two) return [['▼ ① かけざんの 真数を 分けると？', e], ['次の 式を 計算せよ。まず ' + first + ' の 真数を 分けて 表せ。　' + e], first];
-    return [['▼ ② 値は？', tenMid2(q) + ' ＝ □'], ['真数を 分けると\n　' + tenMid(q) + '\nこの 値を 求めよ。'], tenMid(q)];
+    return [['▼ かけざんの 真数を 分けると？', e], ['次の 式の ' + first + ' の 真数を 分けて 表せ。　' + e], first];
   }
   if (CH5.includes(m)) {
     const Nn = NUM(q.N), D = NUM(q.D), e = lg(D.t, Nn.t), mid = fr(lg(2, Nn.t), lg(2, D.t));
@@ -823,8 +820,7 @@ function reasonLines(q) {
     else { const ps = q.ps.map(R), P = ps.reduce((s, p) => qmul(s, p), Q(1)); add('係数を 前に 集めて、残りの log を つなぐ'); add(dMid(q) + ' ＝ ' + ps.map(qs).join(' × ') + ' × ' + lg(q.xs[0], q.xs[0]) + ' ＝ ' + qs(P)); }
   }
   if (m === 'dTen') {
-    if (!two) { add('真数を かけざんに 分けて、log の たしざんに する：' + lg(q.p, q.p * q.r) + ' ＝ ' + lg(q.p, q.p) + ' ＋ ' + lg(q.p, q.r) + ' ＝ 1 ＋ ' + lg(q.p, q.r)); add('もう 1つも 同じ：' + lg(q.r, q.p * q.r) + ' ＝ 1 ＋ ' + lg(q.r, q.p)); add('かけざんは かっこの まま：(1 ＋ ' + lg(q.p, q.r) + ')(1 ＋ ' + lg(q.r, q.p) + ')'); }
-    else { add('展開すると 1 ＋ ' + lg(q.p, q.r) + ' ＋ ' + lg(q.r, q.p) + ' ＋ ' + lg(q.p, q.r) + DOT + lg(q.r, q.p)); add(lg(q.p, q.r) + DOT + lg(q.r, q.p) + ' ＝ 1、たした 2つは ひく 方と 消える → 1 ＋ 1 ＝ 2'); }
+    { add('真数を かけざんに 分けて、log の たしざんに する：' + lg(q.p, q.p * q.r) + ' ＝ ' + lg(q.p, q.p) + ' ＋ ' + lg(q.p, q.r) + ' ＝ 1 ＋ ' + lg(q.p, q.r)); add('もう 1つも 同じ：' + lg(q.r, q.p * q.r) + ' ＝ 1 ＋ ' + lg(q.r, q.p)); add('かけざんは かっこの まま：(1 ＋ ' + lg(q.p, q.r) + ')(1 ＋ ' + lg(q.r, q.p) + ')'); add('（この あと 展開すると ' + lg(q.p, q.r) + DOT + lg(q.r, q.p) + ' ＝ 1、たした 2つは ひく 方と 消えて 値は 2）'); }
   }
   if (CH5.includes(m)) {
     const Nn = NUM(q.N), D = NUM(q.D);
@@ -854,8 +850,7 @@ function hintLines(p) {
   if (m === 'cInv') return ['となりの 真数と 底が 同じか 確かめて、つないで 1つの log に する'];
   if (CH4.includes(m) && !two) return ['真数を 底に なる 数の 累乗で 書く', 'それから 指数を log の 前に おろす'];
   if (CH4.includes(m)) return ['係数を 前に 集めて かけざんに する', '（のこりの log は つないで 1つに）'];
-  if (m === 'dTen' && !two) return ['真数を かけざんに 分ける', '（' + lg('a', 'MN') + ' ＝ ' + lg('a', 'M') + ' ＋ ' + lg('a', 'N') + '）'];
-  if (m === 'dTen') return ['かっこを 展開する', '（底と 真数を 入れかえた log どうしの かけざんは 1）'];
+  if (m === 'dTen') return ['真数を かけざんに 分ける', '（' + lg('a', 'MN') + ' ＝ ' + lg('a', 'M') + ' ＋ ' + lg('a', 'N') + '）'];
   if (CH5.includes(m) && !two) return ['底を 2 に 変換する', '（a、b は 底が 2 の log）'];
   if (CH5.includes(m)) return ['分子と 分母の 真数を 2、3、5 に 分ける', 'それから log₂3 を a、log₂5 を b に 書きかえる'.replace('log₂3', lg(2, 3)).replace('log₂5', lg(2, 5))];
   return [];
@@ -975,14 +970,13 @@ const TYPE_TEXT = {
   sumLog: 'かけざんを たしざんに した', tn: '真数を 答えた（値は 何乗か）', zeroI: '入れかえた log どうしの かけざんは 1（0 では ない）',
   half: '指数を おろし わすれた 方が ある', mulc: '指数は 真数に かけない（log の 前に おろす）', addE: 'おろした 指数は かけざん（たさない）',
   nocoef: '係数（おろした 指数）を わすれた', addc: '係数どうしは かけざん（たさない）', drop1: lg('a', 'a') + ' ＝ 1 を わすれた', pval: lg('a', 'a') + ' は 1（a では ない）',
-  invOne: '底と 真数を 入れかえた log の かけざんは 1', allGone: 'ひく 方で 消えるのは ' + lg('a', 'b') + ' ＋ ' + lg('b', 'a') + ' だけ',
   tnDen: '分母も log に する（真数の ままに しない）', subAB: 'log の わりざんを ひきざんに した', swapAB: 'a と b が 入れかわった',
   scatter: 'えらびかたが ばらばら',
 };
 const MASTER_TEXT = { updown: '分子と 分母', subLog: '分数の まま', mulLog: '分数に する', cancelLog: 'log は 約分 しない', keepBase: '新しい 底', tnBase: '新しい 底', noPow: '新しい 底',
   keep: '逆数', neg: 'プラスと マイナス', flip: '分子と 分母', subE: '指数の 分数', rev: 'つなぐ 向き', mulT: 'つなぐ', sumLog: 'かけざんの まま', tn: '何乗か', zeroI: 'かけると 1',
   half: '指数を おろす', mulc: '指数を おろす', addE: 'おろして かける', nocoef: '係数', addc: '係数を かける', drop1: lg('a', 'a') + ' ＝ 1', pval: lg('a', 'a') + ' ＝ 1',
-  invOne: 'かけると 1', allGone: '消える 項', tnDen: '分母も log', subAB: 'わりざんの まま', swapAB: 'a と b' };
+  tnDen: '分母も log', subAB: 'わりざんの まま', swapAB: 'a と b' };
 function describe(p, cls) { return cls.types.map(t => TYPE_TEXT[t]).join('、'); }
 function masterText(t) { return MASTER_TEXT[t]; }
 function likeOK(q, w, types) {   // 同じ 形で、同じ まちがいの 選択肢が 出る 問題
