@@ -600,7 +600,7 @@ const CINV = [['3', '5'], ['2', '7'], ['5', '9'], ['7', '2'], ['10', '3'], ['6',
 // ---------- 第4章 真数を 小さく：log_{x_i}{(x_{i+1})^{p_i}} の かけざん（輪に なる）----------
 const DTWO = [[['3', '5'], [2, 2]], [['2', '3'], [2, 3]], [['2', '3'], [3, 2]], [['5', '2'], [3, 2]], [['3', '2'], [2, 2]], [['2', '5'], [3, 2]], [['3', '2'], [4, 3]], [['7', '2'], [2, 2]], [['5', '3'], [3, 2]], [['2', '3'], [4, 1]]];
 const DTHREE = [[['3', '2', '5'], [1, 2, 2]], [['2', '5', '3'], [1, 2, 2]], [['5', '2', '3'], [1, 3, 2]], [['3', '5', '2'], [2, 3, 1]], [['2', '3', '7'], [1, 2, 2]], [['7', '2', '3'], [1, 2, 2]], [['2', '3', '5'], [2, 1, 3]]];
-const DTEN = [[2, 3], [3, 5], [2, 7], [3, 2], [5, 3], [7, 2], [3, 7], [5, 2]].filter(x => !(x[0] === 2 && x[1] === 5));   // 教科書の 2・5 は 使わない
+const DBASE = [[2, 2, 3, 2, 3], [3, 2, 2, 3, 2], [2, 3, 3, 2, 3], [2, 2, 5, 2, 2], [5, 2, 2, 3, 2], [3, 2, 5, 2, 3], [2, 2, 3, 3, 2], [2, 3, 5, 2, 3]];   // まぼろし：log_{a^k}{b^m}・log_{b}{a^n}（底を a に そろえて おろす。例 log₄9・log₃8 ＝ 3）
 const DROOT = [[['3', '5'], ['1|2', 2]], [['2', '3'], ['1|2', 3]], [['5', '2'], ['1|3', 2]], [['2', '7'], ['1|2', 2]], [['3', '2'], ['1|3', 2]], [['2', '5'], ['1|2', 3]], [['3', '2'], ['1|2', 4]], [['2', '3'], ['1|3', 3]]];
 // ---------- 第5章 a、b で 表す（log₂3 ＝ a、log₂5 ＝ b、底を 2 に）----------
 const EDEN = [['8', '15'], ['4', '15'], ['16', '5'], ['8', '3'], ['32', '6'], ['8', '45'], ['4', '75'], ['32', '90'], ['8', '5'], ['4', '45'], ['16', '75'], ['8', '12'], ['32', '15'], ['4', '3']];
@@ -708,13 +708,14 @@ function makeOptions(q, rng) {
     const j = ps.findIndex(p => qv(p) !== 1);
     addQ(P, []); addQ(Q(1), ['nocoef']); addQ(S, ['addc']); addQ(qdiv(P, ps[j]), ['half']);
   }
-  if (m === 'dTen') {   // 式の かけざんの 部分 log_p(pr)・log_r(pr) の 真数を 分けた 形（11-16 先生「計算したい式と 関係ない」→ 式の 中の かけざん 全体を 聞く）
-    const p = q.p, r = q.r, L1 = lg(p, r), L2 = lg(r, p), v1 = LNv(p, r), v2 = LNv(r, p);
-    add('(1 ＋ ' + L1 + ')(1 ＋ ' + L2 + ')', (1 + v1) * (1 + v2), []);
-    add(L1 + DOT + L2, v1 * v2, ['drop1']);
-    add('(' + p + ' ＋ ' + L1 + ')(' + r + ' ＋ ' + L2 + ')', (p + v1) * (r + v2), ['pval']);
-    add('(1 ＋ ' + L1 + ') ＋ (1 ＋ ' + L2 + ')', 2 + v1 + v2, ['sumLog']);
+  if (m === 'dBase' && !two) {   // ① 底を a に そろえて 指数を おろした 形
+    const { a, k, b, m: mm, n } = q, L1 = lg(a, b), L2 = lg(b, a), v = LNv(a, b), w = LNv(b, a), c1 = Q(mm, k);
+    add(ct(c1) + L1 + DOT + ct(Q(n)) + L2, qv(c1) * v * n * w, []);
+    add(ct(Q(mm)) + L1 + DOT + ct(Q(n)) + L2, mm * v * n * w, ['baseDiv']);
+    add(ct(Q(mm * k)) + L1 + DOT + ct(Q(n)) + L2, mm * k * v * n * w, ['baseMul']);
+    add(ct(c1) + L1 + DOT + L2, qv(c1) * v * w, ['half']);
   }
+  if (m === 'dBase' && two) { const P = Q(q.m * q.n, q.k); addQ(P, []); addQ(Q(q.m * q.n), ['baseDiv']); addQ(Q(1), ['nocoef']); addQ(Q(q.m * q.k * q.n), ['baseMul']); }
   if (CH5.includes(m) && !two) {
     const Nn = NUM(q.N), D = NUM(q.D), two_ = NUM('2'), top = LG(two_, Nn), bot = LG(two_, D);
     add(fr(top.t, bot.t), top.v / bot.v, []);
@@ -747,15 +748,15 @@ const CH2 = ['vInt', 'vFrac', 'vRoot', 'vSqB'];
 const CH3 = ['cChain', 'cSwap', 'cThree'];
 const CH4 = ['dTwo', 'dThree', 'dRoot'];
 const CH5 = ['eDen', 'eVar', 'eMix', 'eRoot'];
-const STEPS = CH2.concat(CH3, CH4, CH5);   // ワケテン（dTen）は ① だけ（値を 求めるのは 判断を こえる。11-16 先生）
+const STEPS = CH2.concat(CH3, CH4, ['dBase'], CH5);   // ワケテン（361(3) の 形）は 外した（判断を こえる・前半だけを 聞くのは わからない。11-16 先生）
 const RULE_HEN = '底の 変換公式：' + lg('a', 'b') + ' ＝ ' + fr(lg('c', 'b'), lg('c', 'a')) + '（元の 真数は 分子、元の 底は 分母）';
 const RULE_TSUNAGU = 'となりの 真数と 底が 同じなら、つないで 1つの log に する：' + lg('a', 'b') + DOT + lg('b', 'c') + ' ＝ ' + lg('a', 'c');
 const RULE_OROSU = '真数の 指数は log の 前に おろす：' + lg('a', 'M^{p}') + ' ＝ ' + pk('p') + lg('a', 'M');
 const HEAD5 = lg(2, 3) + ' ＝ a、' + lg(2, 5) + ' ＝ b';
 const dExpr = q => { const xs = q.xs.map(NUM), ps = q.ps.map(R), n = xs.length; return xs.map((x, i) => { const y = xs[(i + 1) % n], p = ps[i]; return lg(x.t, isInt(p) ? (qv(p) === 1 ? y.t : String(Math.round(Math.pow(y.v, qv(p))))) : rt(p[1], p[0] === 1 ? y.t : String(Math.pow(y.v, p[0])))); }).join(DOT); };
 const dMid = q => { const xs = q.xs.map(NUM), ps = q.ps.map(R), n = xs.length; return xs.map((x, i) => ct(ps[i]) + lg(x.t, xs[(i + 1) % n].t)).join(DOT); };
-const tenExpr = q => { const N = q.p * q.r; return lg(q.p, N) + DOT + lg(q.r, N) + ' − (' + lg(q.p, q.r) + ' ＋ ' + lg(q.r, q.p) + ')'; };
-const tenMid = q => '(1 ＋ ' + lg(q.p, q.r) + ')(1 ＋ ' + lg(q.r, q.p) + ') − (' + lg(q.p, q.r) + ' ＋ ' + lg(q.r, q.p) + ')';
+const bExpr = q => lg(Math.pow(q.a, q.k), Math.pow(q.b, q.m)) + DOT + lg(q.b, Math.pow(q.a, q.n));
+const bMid = q => ct(Q(q.m, q.k)) + lg(q.a, q.b) + DOT + ct(Q(q.n)) + lg(q.b, q.a);
 function texts(q) {
   const m = q.mode, two = q.st === 2;
   if (m === 'hForm') { const e = lg(NUM(q.a).t, NUM(q.b).t); return [['▼ 底が ' + q.c + ' の log で 表すと？', e], ['底の 変換公式を 用いて、' + e + ' を 底が ' + q.c + ' の 対数で 表せ。'], e]; }
@@ -779,9 +780,10 @@ function texts(q) {
     if (!two) return [['▼ ① 指数を log の 前に おろすと？', e], ['次の 式を 計算せよ。まず 真数の 指数を log の 前に おろせ。　' + e], e];
     return [['▼ ② 値は？', e + '\n＝ ' + mid + ' ＝ □'], ['指数を おろすと\n　' + e + '\n　＝ ' + mid + '\nこの 値を 求めよ。'], mid];
   }
-  if (m === 'dTen') {
-    const e = tenExpr(q), first = lg(q.p, q.p * q.r) + DOT + lg(q.r, q.p * q.r);
-    return [['▼ かけざんの 真数を 分けると？', e], ['次の 式の ' + first + ' の 真数を 分けて 表せ。　' + e], first];
+  if (m === 'dBase') {
+    const e = bExpr(q), mid = bMid(q);
+    if (!two) return [['▼ ① 底を ' + q.a + ' に そろえて おろすと？', e], ['次の 式を 計算せよ。まず 底を ' + q.a + ' に そろえて、指数を log の 前に おろせ。　' + e], e];
+    return [['▼ ② 値は？', e + '\n＝ ' + mid + ' ＝ □'], ['底を そろえて おろすと\n　' + e + '\n　＝ ' + mid + '\nこの 値を 求めよ。'], mid];
   }
   if (CH5.includes(m)) {
     const Nn = NUM(q.N), D = NUM(q.D), e = lg(D.t, Nn.t), mid = two ? fr(lg(2, factT(q.N)), lg(2, factT(q.D))) : fr(lg(2, Nn.t), lg(2, D.t));
@@ -824,8 +826,10 @@ function reasonLines(q) {
     if (!two) { add('真数を なるべく 小さく：累乗根は 指数に、累乗の 指数は log の 前へ'); add(RULE_OROSU); add(dExpr(q) + ' ＝ ' + dMid(q)); }
     else { const ps = q.ps.map(R), P = ps.reduce((s, p) => qmul(s, p), Q(1)); add('係数を 前に 集めて、残りの log を つなぐ'); add(dMid(q) + ' ＝ ' + ps.map(qs).join(' × ') + ' × ' + lg(q.xs[0], q.xs[0]) + ' ＝ ' + qs(P)); }
   }
-  if (m === 'dTen') {
-    { add('真数を かけざんに 分けて、log の たしざんに する：' + lg(q.p, q.p * q.r) + ' ＝ ' + lg(q.p, q.p) + ' ＋ ' + lg(q.p, q.r) + ' ＝ 1 ＋ ' + lg(q.p, q.r)); add('もう 1つも 同じ：' + lg(q.r, q.p * q.r) + ' ＝ 1 ＋ ' + lg(q.r, q.p)); add('かけざんは かっこの まま：(1 ＋ ' + lg(q.p, q.r) + ')(1 ＋ ' + lg(q.r, q.p) + ')'); add('（この あと 展開すると ' + lg(q.p, q.r) + DOT + lg(q.r, q.p) + ' ＝ 1、たした 2つは ひく 方と 消えて 値は 2）'); }
+  if (m === 'dBase') {
+    const A = Math.pow(q.a, q.k), B = Math.pow(q.b, q.m);
+    if (!two) { add(RULE_HEN); add(lg(A, B) + ' ＝ ' + fr(lg(q.a, pw(q.b, q.m)), lg(q.a, pw(q.a, q.k))) + ' ＝ ' + fr(q.m + lg(q.a, q.b), q.k) + '（底の 指数は 分母に おりる）'); add(lg(q.b, Math.pow(q.a, q.n)) + ' ＝ ' + pk(q.n) + lg(q.b, q.a)); }
+    else { add('係数を 前に 集めて、残りの log を つなぐ（' + lg(q.a, q.b) + DOT + lg(q.b, q.a) + ' ＝ 1）'); add(qs(Q(q.m, q.k)) + ' × ' + q.n + ' ＝ ' + qs(Q(q.m * q.n, q.k))); }
   }
   if (CH5.includes(m)) {
     const Nn = NUM(q.N), D = NUM(q.D);
@@ -855,7 +859,8 @@ function hintLines(p) {
   if (m === 'cInv') return ['となりの 真数と 底が 同じか 確かめて、つないで 1つの log に する'];
   if (CH4.includes(m) && !two) return ['真数を 底に なる 数の 累乗で 書く', 'それから 指数を log の 前に おろす'];
   if (CH4.includes(m)) return ['係数を 前に 集めて かけざんに する', '（のこりの log は つないで 1つに）'];
-  if (m === 'dTen') return ['真数を かけざんに 分ける', '（' + lg('a', 'MN') + ' ＝ ' + lg('a', 'M') + ' ＋ ' + lg('a', 'N') + '）'];
+  if (m === 'dBase' && !two) return ['底と 真数を ' + p.prm.a + ' と ' + p.prm.b + ' の 累乗で 書く', '底を ' + p.prm.a + ' に そろえると、底の 指数は 分母に おりる'];
+  if (m === 'dBase') return ['係数を 前に 集めて かけざんに する', '（のこりの log は つないで 1つに）'];
   if (CH5.includes(m) && !two) return ['底を 2 に 変換する', '（a、b は 底が 2 の log）'];
   if (CH5.includes(m)) return ['真数の 指数を log の 前に おろす', 'それから ' + lg(2, 3) + ' を a、' + lg(2, 5) + ' を b、' + lg(2, 2) + ' を 1 に する'];
   return [];
@@ -870,8 +875,8 @@ const CH_ALL = [
     mab: { form: 'vSqB', name: 'ネッコテイ', sprite: '🌳', tip: lg('√{2}', 8) + ' ＝ ' + fr(lg(2, '2^{3}'), lg(2, '2^{{1|2}}')) + ' ＝ 6：底が 累乗根でも 同じ' }, boss: { name: 'ソロエオウ', sprite: '🗻' } },
   { key: 'kake', title: '対数の かけざん', forms: ['cChain', 'cSwap', 'cThree'], plays: [['cChain', 'cThree'], ['cSwap', 'cChain'], ['cSwap', 'MAB']], noFirst: ['cSwap'],   // 順番を 入れかえる 問題は ★0 の 回（中ボスも）に 出さない（11-16 先生）
     mab: { form: 'cInv', name: 'カケテイチ', sprite: '☯️', tip: lg(3, 5) + DOT + lg(5, 3) + ' ＝ ' + lg(3, 3) + ' ＝ 1' }, boss: { name: 'ツナギオウ', sprite: '⛓️' } },
-  { key: 'chii', title: '真数を 小さく', forms: ['dTwo', 'dThree', 'dTen'], plays: [['dTwo', 'dThree'], ['dTen', 'dTwo'], ['dThree', 'MAB']],
-    mab: { form: 'dRoot', name: 'ネッコオロシ', sprite: '🥕', tip: lg(3, '√{5}') + DOT + lg(5, 9) + ' ＝ ' + pk('{1|2}') + lg(3, 5) + DOT + pk(2) + lg(5, 3) + ' ＝ 1' }, boss: { name: 'チイサクオウ', sprite: '🐜' } },
+  { key: 'chii', title: '真数を 小さく', forms: ['dTwo', 'dThree', 'dRoot'], plays: [['dTwo', 'dThree'], ['dRoot', 'dTwo'], ['dThree', 'MAB']],
+    mab: { form: 'dBase', name: 'ソロエオロシ', sprite: '🪝', tip: lg(4, 9) + DOT + lg(3, 8) + ' ＝ ' + pk('{2|2}') + lg(2, 3) + DOT + pk(3) + lg(3, 2) + ' ＝ 3：底を そろえると 底の 指数は 分母に' }, boss: { name: 'チイサクオウ', sprite: '🐜' } },
   { key: 'ab', title: 'a、b で 表す', forms: ['eDen', 'eVar', 'eMix'], plays: [['eDen', 'eVar'], ['eMix', 'eDen'], ['eVar', 'MAB']],
     mab: { form: 'eRoot', name: 'ルートエービ', sprite: '🌵', tip: lg(9, '√{5}') + ' ＝ ' + fr(lg(2, '√{5}'), lg(2, 9)) + ' ＝ ' + fr('b', '4a') }, boss: { name: 'エービーオウ', sprite: '🔤' } },
 ];
@@ -896,7 +901,7 @@ const MONSTERS = [
   ['cThree', 'ミツツナギ', '🧵', lg(2, 3) + DOT + lg(3, 5) + DOT + lg(5, 8) + ' ＝ ' + lg(2, 8) + '：3つでも つなぐ'],
   ['dTwo', 'オロシカケ', '🪜', lg(3, 25) + DOT + lg(5, 9) + ' ＝ ' + pk(2) + lg(3, 5) + DOT + pk(2) + lg(5, 3) + ' ＝ 4'],
   ['dThree', 'ミツオロシ', '🎋', lg(3, 2) + DOT + lg(2, 25) + DOT + lg(5, 9) + ' ＝ 2 × 2 × ' + lg(3, 3) + ' ＝ 4'],
-  ['dTen', 'ワケテン', '🔟', lg(2, 6) + DOT + lg(3, 6) + ' ＝ (1 ＋ ' + lg(2, 3) + ')(1 ＋ ' + lg(3, 2) + ')：真数を 分ける'],
+  ['dRoot', 'ネッコオロシ', '🥕', lg(3, '√{5}') + DOT + lg(5, 9) + ' ＝ ' + pk('{1|2}') + lg(3, 5) + DOT + pk(2) + lg(5, 3) + ' ＝ 1：累乗根も 指数に して おろす'],
   ['eDen', 'ニノベキ', '🔋', lg(32, 15) + ' ＝ ' + fr(lg(2, 15), lg(2, 32)) + ' ＝ ' + fr('a ＋ b', 5)],
   ['eVar', 'エービー', '🅰️', lg(5, 12) + ' ＝ ' + fr(lg(2, 12), lg(2, 5)) + ' ＝ ' + fr('a ＋ 2', 'b')],
   ['eMix', 'マジエービ', '🎨', lg(6, 15) + ' ＝ ' + fr(lg(2, 15), lg(2, 6)) + ' ＝ ' + fr('a ＋ b', 'a ＋ 1')],
@@ -932,7 +937,7 @@ const GEN = {
   dTwo: rng => { const [xs, ps] = pick(rng, DTWO); return { xs, ps: ps.map(String) }; },
   dThree: rng => { const [xs, ps] = pick(rng, DTHREE); return { xs, ps: ps.map(String) }; },
   dRoot: rng => { const [xs, ps] = pick(rng, DROOT); return { xs, ps: ps.map(String) }; },
-  dTen: rng => { const [p, r] = pick(rng, DTEN); return { p, r }; },
+  dBase: rng => { const [a, k, b, m, n] = pick(rng, DBASE); return { a, k, b, m, n }; },
   eDen: (rng, o = {}) => { const [D, N] = pick(rng, o.first ? EDEN.filter(x => EASY5(x[1])) : EDEN); return { D, N }; },
   eVar: (rng, o = {}) => { const [D, N] = pick(rng, o.first ? EVAR.filter(x => EASY5(x[0]) && EASY5(x[1])) : EVAR); return { D, N }; },
   eMix: (rng, o = {}) => { const [D, N] = pick(rng, o.first ? EMIX.filter(x => EASY5(x[0]) && EASY5(x[1])) : EMIX); return { D, N }; }, eRoot: rng => { const [D, N] = pick(rng, EROOT); return { D, N }; },
@@ -975,13 +980,13 @@ const TYPE_TEXT = {
   subE: '指数どうしを ひかない（分数に する）', rev: '底と 真数が 逆（はじめの 底から さいごの 真数へ）', mulT: '真数を かけない（となりの 真数と 底を つなぐ）',
   sumLog: 'かけざんを たしざんに した', tn: '真数を 答えた（値は 何乗か）', zeroI: '入れかえた log どうしの かけざんは 1（0 では ない）',
   half: '指数を おろし わすれた 方が ある', mulc: '指数は 真数に かけない（log の 前に おろす）', addE: 'おろした 指数は かけざん（たさない）',
-  nocoef: '係数（おろした 指数）を わすれた', addc: '係数どうしは かけざん（たさない）', drop1: lg('a', 'a') + ' ＝ 1 を わすれた', pval: lg('a', 'a') + ' は 1（a では ない）',
+  nocoef: '係数（おろした 指数）を わすれた', addc: '係数どうしは かけざん（たさない）', baseDiv: '底の 指数も おろす（底の 指数は 分母に おりる）', baseMul: '底の 指数は 分母に おりる（かけない）',
   tnDen: '分母も log に する（真数の ままに しない）', subAB: 'log の わりざんを ひきざんに した', swapAB: 'a と b が 入れかわった',
   scatter: 'えらびかたが ばらばら',
 };
 const MASTER_TEXT = { updown: '分子と 分母', subLog: '分数の まま', mulLog: '分数に する', cancelLog: 'log は 約分 しない', keepBase: '新しい 底', tnBase: '新しい 底', noPow: '新しい 底',
   keep: '逆数', neg: 'プラスと マイナス', flip: '分子と 分母', subE: '指数の 分数', rev: 'つなぐ 向き', mulT: 'つなぐ', sumLog: 'かけざんの まま', tn: '何乗か', zeroI: 'かけると 1',
-  half: '指数を おろす', mulc: '指数を おろす', addE: 'おろして かける', nocoef: '係数', addc: '係数を かける', drop1: lg('a', 'a') + ' ＝ 1', pval: lg('a', 'a') + ' ＝ 1',
+  half: '指数を おろす', mulc: '指数を おろす', addE: 'おろして かける', nocoef: '係数', addc: '係数を かける', baseDiv: '底の 指数', baseMul: '底の 指数',
   tnDen: '分母も log', subAB: 'わりざんの まま', swapAB: 'a と b' };
 function describe(p, cls) { return cls.types.map(t => TYPE_TEXT[t]).join('、'); }
 function masterText(t) { return MASTER_TEXT[t]; }
